@@ -1,0 +1,6 @@
+Flask
+numpy
+gevent
+starcc
+requests
+zhon

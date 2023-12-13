@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>GeZi Demonstration System-Prof</title>
+  <!--
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  -->
+  <script src="static/vue.js"></script>
+  <script src="static/axios.min.js"></script>
+  
+  <style>
+    h1 {
+        text-shadow:  0 0 2px hsl(40, 28.57% , 28.82%),0 0 2px hsl(40, 28.57% , 28.82%), 0 0 2px hsl(40, 28.57% , 28.82%);/*多个叠加*/
+        font-size: 40px; 
+        color:#fff;
+        text-align: center;
+        position: absolute;
+        top: 1%;
+    }
+
+    input[type=text], select {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 30px;
+    }
+
+    input[type=submit] {
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 35px;
+    }
+
+    input[type=submit]:hover {
+        background-color: #45a049;
+    }
+
+    div {
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+    }
+
+    div#app {
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+        position: absolute;
+        top: 15%;
+    }
+
+    div#Example {
+        border-radius: 5px;
+        background-color: #f2f2cc;
+        padding: 10px;
+        font-size: 30px;
+    }
+
+    div#Tips {
+        border-radius: 5px;
+        background-color: #f2f2dd;
+        padding: 10px;
+        font-size: 30px;
+    }
+
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+
+    label {
+        display: inline-block;
+        text-align: left;
+        font-size: 30px;
+    }
+
+    textarea {
+        display: inline-block;
+        text-align: left;
+        width: 80%;
+        height: 30%;
+        font-size: 30px;
+    }
+
+    button {
+        width: 12%;
+        background-color: #00AAAA;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 30px;
+    }
+
+  </style>
+</head>
+<body>
+  <h1 >厦门大学自然语言处理实验室-戏曲唱腔机器合成系统专业版</h1>
+  <div id="app">
+      <label for="pitch">音高</label>
+      <input type="text" v-model="textPitch" v-on:input="disenableAudio" name="pitch" id="pitch" placeholder="请输入音高序列...">
+
+      <label for="duration">音长</label>
+      <input type="text" v-model="textDuration" v-on:input="disenableAudio" name="duration" id="duration" placeholder="请输入音长序列...">
+
+      <label for="lyrics">唱词</label>
+      <input type="text" v-model="textLyrics" v-on:input="disenableAudio" name="lyrics" id="lyrics" placeholder="请输入唱词序列...">
+
+      <label for="singer">行当(角色)</label>
+      <select v-model="nameSinger" @change="disenableAudio" name="singer" id="singer">
+        <option value="姚琼男">花旦</option>
+        <option value="林姗姗">刀马旦</option>
+        <option value="曾宝珠">青衣</option>
+        <option value="张蓉鑫">男丑</option>
+        <option value="郭少鹏">小生</option>
+      </select>
+
+      <p id="chechInfo" style="font-size: 30px;"></p>
+
+      <input type="submit" value="提交" @click="sendText">
+
+      <div>
+        <audio ref="audioPlayer" style="border: solid; border-radius: 3px;" id="audioIcon" :src="audioUrl" controls autoplay>您的浏览器不支持 audio 元素!</audio>
+      </div>
+
+      <div id="Tips">
+        <span>
+          <p>Tips:</p><br>
+          <p>1. 音高、音长和唱词序列长度必须相等，每个单位用空格分隔。 唱词序列可用连音符号"-"补充长度</p><br>
+          <p>2. 音高使用字母表示法，基本格式为[A-G][#|b][2-5]，不区分大小写</p><br>
+          <p>3. 音长的单位是秒(s)，在BPM=120，4/4拍的条件下，一个四分音符的音长为0.5s，一个八分音符的音长为0.25s，以此类推</p><br>
+          <p>4. 字母"sp"代表停顿，不区分大小写。音高序列和唱词序列的sp需对齐</p><br>
+        </span>
+      </div>
+
+      <div id="Example">
+        <h3>示例</h3>
+        <p>示例1. 来自流行音乐《给我一首歌的时间》-周杰伦</p>
+        <textarea type="text" id="exp1" rows="4" disabled>D#4 D#4 D#4 D#4 sp D#4 D4 D4 D4 D#4 F4 D#4 D4 sp|0.113 0.329 0.287 0.133 0.150 0.484 0.242 0.180 0.343 0.152 0.266 0.280 0.633 0.444|你 说 你 不 sp 懂 为 何 在 这 时 牵 手 sp</textarea>
+        <button name="button1" style="display: inline-block; position: relative; top: -45px; right: -50px;" @click='transInput("exp1")'>使用</button>
+
+        <p>示例2. 来自歌仔戏《沈园情》-唐婉-梅花调</p>
+        <textarea type="text" id="exp2" rows="4" disabled>C5 E4 G4 A4 F4 D4 A3 C4 sp C4 A3 C4 D4 E4 sp|0.545 0.666 0.485 0.244 0.247 0.23 0.784 1.142 0.541 0.64 1.245 0.323 0.339 1.534 0.316|夫 唱 妇 - - - 随 - sp 相 敬 如 - 宾 sp</textarea>
+        <button name="button2" style="display: inline-block; position: relative; top: -45px; right: -50px;" @click='transInput("exp2")'>使用</button>
+
+        <p>示例3. 来自流行音乐《小酒窝》-林俊杰</p>
+        <textarea type="text" id="exp3" rows="4" disabled>C#4 F#4 G#4 A#4 F#4 F#4 C#4 C#4 sp C#4 A#4 G#4 A#4 G#4 F4 C#4|0.407 0.376 0.242 0.509 0.183 0.315 0.235 0.361 0.223 0.377 0.340 0.299 0.344 0.283 0.323 0.360|小 酒 窝 长 - 睫 - 毛 SP 是 你 最 美 的 记 号</textarea>
+        <button name="button3" style="display: inline-block; position: relative;  top: -45px; right: -50px;" @click='transInput("exp3")'>使用</button>
+
+        <p>示例4. 来自歌仔戏《千古长恨》-赵美玉-春雨曲</p>
+        <textarea type="text" id="exp4" rows="4" disabled>sp C♯4 E4 C♯4 F♯4 F4 F♯4 G4 F4 E4 F♯4 G♯4 sp C♯5 B4 A4 F♯4 F♯4 G♯4 sp|1.11 0.75 0.53 0.306 0.34 0.191 0.265 0.143 0.122 0.317 0.297 1.117 0.51 0.444 0.251 0.176 0.737 0.797 1.66 0.552|sp 绿 柳 - 垂 - - - - - - 丝 sp 映 - 画 - 楼 - sp</textarea>
+        <button name="button3" style="display: inline-block; position: relative;  top: -45px; right: -50px;" @click='transInput("exp4")'>使用</button>
+
+        <p>示例5. 来自流行歌曲《爱拼才会赢》-叶启田</p>
+        <textarea type="text" id="exp5" rows="4" disabled>sp D4 C4 A3 E4 D4 sp C4 D4 C4 A3 C4 sp|0.5 0.125 0.125 0.5 0.25 0.5 0.125 0.125 0.125 0.125 0.125 1.0 0.5|sp 爱 - 拼 - 才 sp 会 - - - 赢 sp</textarea>
+        <button name="button3" style="display: inline-block; position: relative;  top: -45px; right: -50px;" @click='transInput("exp5")'>使用</button>
+
+        <p>示例6. 来自歌仔戏《沈园情》-幕后-留书调</p>
+        <textarea type="text" id="exp6" rows="10" disabled>sp E4 G3 A3 C4 A3 C4 C♯4 D4 E4 sp E4 A4 A4 G4 E4 sp D4 E4 F♯4 G4 A4 F4 D4 E4 D♯4 D4 C4 A3 G3 A3 sp A3 C4 A3 C4 A♯3 G♯3 G3 E3 sp E4 G4 E4 F♯4 E4 D♯4 D4 A3 C4 sp D4 E4 G4 A4 E4 D♯4 C♯4 C4 C4 A3 sp G3 E3 G3 A3 sp G4 F4 G4 A4 G4 E4 D♯4 D4 C4 A3 sp A4 A♯4 C5 B4 A4 G♯4 A4 G4 E4 sp E4 D4 E4 G4 A4 F♯4 E4 E4 C♯4 C4 C4 A3 sp G3 F3 G3 A3 sp|0.253 0.655 0.100 0.491 0.513 0.273 0.336 0.218 0.639 0.557 0.44 0.57 0.263 0.207 0.439 1.748 0.47 1.095 0.381 0.242 0.445 0.419 0.228 0.332 0.204 0.26 0.139 0.502 0.509 0.61 1.866 0.336 0.591 0.723 0.522 0.525 0.153 0.154 0.583 1.034 0.75 1.087 0.384 0.457 0.16 0.211 0.172 0.137 0.797 1.437 0.493 1.018 0.357 0.702 0.644 0.636 0.152 0.12 0.357 0.468 1.37 0.797 0.683 0.29 0.262 2.244 0.487 0.621 0.392 0.263 0.384 0.288 0.273 0.144 0.121 0.878 1.279 0.63 1.174 0.46 0.273 0.142 0.173 0.325 0.354 0.377 1.52 0.512 0.652 0.297 0.239 0.799 0.344 0.295 0.661 0.124 0.131 0.348 0.901 0.987 0.67 0.791 0.377 0.213 2.514 0.314|sp 孤 梦 - 空 - - - 回 - sp 菊 枕 - - - sp 愁 - 肠 - - - 难 - 诉 - - - 银 筝 sp 阑 珊 游 赏 - - - - sp 心 - - - - - - 情 - sp 钗 - 堕 - 滑 - - - 落 - sp 无 - - 声 sp 梧 桐 - 月 - - - - 照 - sp 惊 鸿 - - - - 影 - - sp 更 - - 深 - - 露 - - - 夜 - sp 寒 - - 生 sp</textarea>
+        <button name="button3" style="display: inline-block; position: relative;  top: -100px; right: -50px;" @click='transInput("exp6")'>使用</button>
+      </div>
+
+      <footer class="main-footer">
+        <div style="font-size: 5px;">
+          <strong>Copyright &copy; 2023-2027 <a href="http://nlp.xmu.edu.cn/">XMUNLP</a> </strong> All rights reserved.
+        </div>
+        <!-- /.container -->
+      </footer>
+  </div>
+
+  <script>
+    
+    new Vue({
+      el: '#app',
+      data: {
+        textPitch: 'sp D4 E4 F♯4 A♯3 A3 B3 D4 G♯3 A3 sp E4 F♯4 A4 F4 D♯4 C♯4 B3 D4 E4 sp',
+        textDuration: '0.415 0.81 0.602 0.36 0.328 0.217 0.278 0.202 0.322 0.386 0.3 0.448 0.25 0.142 0.577 0.138 0.148 0.211 0.563 0.959 0.039',
+        textLyrics: 'sp 阿 兄 - 勤 - - - 劳 - sp 又 - - 善 - - - 良 - sp',
+        nameSinger: '姚琼男',
+        audioUrl: '',
+        validInput: false
+      },
+      methods: {
+        disenableAudio() {
+          this.audioUrl='';
+          document.getElementById("chechInfo").innerHTML = '';
+        },
+
+        transInput(exp) {
+            var text = document.getElementById(exp).value;
+            var tList = text.split('|');
+            this.textPitch = tList[0];
+            this.textDuration = tList[1];
+            this.textLyrics = tList[2];
+          },
+        validateInput() {
+            var textList = this.textLyrics.split(' ').filter(item => item && item.trim());
+            var pitchList = this.textPitch.split(' ').filter(item => item && item.trim());
+            var durList = this.textDuration.split(' ').filter(item => item && item.trim());
+            if (pitchList.length == durList.length && textList.length == durList.length && pitchList.length == textList.length){
+              var textSpPosition = [];
+              var pitchSpPosition = [];
+              for (var i = 0; i < pitchList.length; i++) {
+                if (textList[i].toLowerCase() == 'sp') {
+                  textSpPosition.push(i);
+                }
+                if (pitchList[i].toLowerCase() == 'sp') {
+                  pitchSpPosition.push(i);
+                }
+              }
+              if (!(textSpPosition.length === pitchSpPosition.length && textSpPosition.every((v,i) => v === pitchSpPosition[i]))) {
+                document.getElementById("chechInfo").innerHTML = `输入sp位置不匹配, 请重新输入！ 唱词sp位置：${textSpPosition}, 音高sp位置：${pitchSpPosition}`;
+                return false;
+              }
+              document.getElementById("chechInfo").innerHTML = "输入有效, 开始合成...";
+              return true;
+              }
+            else {
+              document.getElementById("chechInfo").innerHTML = `输入长度不匹配, 音高：${pitchList.length}, 音长：${durList.length}, 唱词：${textList.length}; 请重新输入！`;
+              return false;
+            }
+          },
+        sendText() {
+          const requestData = {
+            text: this.textLyrics,
+            notes: this.textPitch,
+            notes_duration: this.textDuration,
+            spk_name: this.nameSinger,
+          };
+          var valid = this.validateInput();
+          console.log(`chech input valid ${valid}`)
+          if (valid) {
+          axios.post('https://nmt.xmu.edu.cn/ssyn/professional', requestData)
+            .then(response => {
+              // 处理后端返回的响应数据
+              if (response.data.status) {
+                const audioUrl = response.data.audioUrl;
+                this.audioUrl = audioUrl;
+                document.getElementById("chechInfo").innerHTML = "合成好了！";
+                this.$refs.audioPlayer.play();
+              }
+              else {
+                document.getElementById("chechInfo").innerHTML = "无法合成，请仔细检查输入！";
+              }
+            })
+            .catch(error => {
+              console.error(error);
+            });
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

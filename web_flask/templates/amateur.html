@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+  <title>GeZi Demonstration System-Amat</title>
+  <script src="static/vue.js"></script>
+  <script src="static/axios.min.js"></script>
+  <style>
+    h1 {
+        text-shadow:  0 0 2px hsl(40, 28.57% , 28.82%),0 0 2px hsl(40, 28.57% , 28.82%), 0 0 2px hsl(40, 28.57% , 28.82%);/*多个叠加*/
+        font-size: 40px; 
+        color:#fff;
+        text-align: center;
+        position: absolute;
+        top: 1%;
+    }
+
+    input[type=text], select {
+        width: 100%;
+        padding: 12px 20px;
+        margin: 8px 0;
+        display: inline-block;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 30px;
+    }
+
+    input[type=submit] {
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+        padding: 14px 20px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 35px;
+    }
+
+    input[type=submit]:hover {
+        background-color: #45a049;
+    }
+
+    div {
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+    }
+
+    div#app {
+        border-radius: 5px;
+        background-color: #f2f2f2;
+        padding: 20px;
+        position: absolute;
+        top: 15%;
+    }
+
+    div#Example {
+        border-radius: 5px;
+        background-color: #f2f2cc;
+        padding: 10px;
+    }
+
+    div#Tips {
+        border-radius: 5px;
+        background-color: #f2f2dd;
+        padding: 10px;
+        font-size: 30px;
+    }
+
+    body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+    }
+
+    label {
+        display: inline-block;
+        text-align: left;
+        font-size: 30px;
+    }
+
+    textarea {
+        display: inline-block;
+        text-align: left;
+        width: 80%;
+        height: 30%;
+        font-size: 30px;
+    }
+
+  </style>
+</head>
+<body>
+  <h1 >厦门大学自然语言处理实验室-戏曲唱腔机器合成系统入门版</h1>
+  <div id="app">
+      <label for="lyrics">唱词</label>
+      <input type="text" v-model="textLyrics" v-on:input="disenableAudio" name="lyrics" id="lyrics" placeholder="请输入唱词">
+
+      <label for="singer">曲牌</label>
+      <select v-model="quPai" @change="changeLyrics" name="qupai" id="qupai">
+        <option value="qizi">七字调</option>
+        <option value="zasui">杂碎调</option>
+        <option value="kudiao">哭调</option>
+        <option value="xiaodiao">小调</option>
+      </select>
+
+      <label for="singer">行当(角色)</label>
+      <select v-model="nameSinger" @change="disenableAudio" name="singer" id="singer">
+        <option value="姚琼男">花旦</option>
+        <option value="林姗姗">刀马旦</option>
+        <option value="曾宝珠">青衣</option>
+        <option value="张蓉鑫">男丑</option>
+        <option value="郭少鹏">小生</option>
+      </select>
+
+      <p id="chechInfo" style="font-size: 30px;"></p>
+
+      <input type="submit" value="提交" @click="sendText">
+
+      <div>
+        <audio ref="audioPlayer" id="audioIcon" style="border: solid; border-radius: 3px;" :src="audioUrl" controls autoplay>您的浏览器不支持 audio 元素!</audio>
+      </div>
+
+      <div id="Tips">
+        <span>
+          <p>Tips:</p><br>
+          <p>1. 选择曲牌后会预填入唱词，用户可自由修改唱词。</p><br>
+          <p>2. 如果想要更精细地控制生成，请前往<a style="color: #f242cc; text-decoration: underline;" onclick='location.href=("p")'>专业版</a></p><br>
+        </span>
+      </div>
+
+      <footer class="main-footer">
+        <div style="font-size: 5px;">
+          <strong>Copyright &copy; 2023-2027 <a href="http://nlp.xmu.edu.cn/">XMUNLP</a> </strong> All rights reserved.
+        </div>
+        <!-- /.container -->
+      </footer>
+
+  </div>
+
+  <script>
+    new Vue({
+      el: '#app',
+      data: {
+        textPitch: 'sp F♯4 A♯4 E4 A4 F♯4 F♯4 F♯4 E4 D♯4 D♯4 F♯4 C4',
+        textDuration: '0.466 0.585 0.600 0.561 0.719 0.84 0.287 0.328 0.241 0.292 0.22 0.557 0.615',
+        textLyrics: '同甘共苦过日子',
+        nameSinger: '姚琼男',
+        quPai: 'qizi',
+        audioUrl: '',
+        validInput: false,
+        textChanged: false,
+      },
+      methods: {
+        disenableAudio() {
+          this.audioUrl='';
+          document.getElementById("chechInfo").innerHTML = '';
+          this.textChanged = true;
+        },
+
+        changeLyrics(event) {
+            switch(this.quPai) {
+                case 'qizi':
+                    if (!this.textChanged) {
+                      this.textLyrics="同甘共苦过日子";
+                    }
+                    this.textDuration="0.466 0.585 0.600 0.561 0.719 0.84 0.287 0.328 0.241 0.292 0.22 0.557 0.615";
+                    this.textPitch="sp F♯4 A♯4 E4 A4 F♯4 F♯4 F♯4 E4 D♯4 D♯4 F♯4 C4";
+                    break;
+                case 'zasui':
+                    if (!this.textChanged) {
+                      this.textLyrics="树欲静来风不止";
+                    }
+                    this.textDuration="0.26 1.006 0.804 0.412 0.996 0.29 0.912 0.115 0.349 0.16 0.135 0.158 0.644 0.766";
+                    this.textPitch="sp F♯4 E4 F4 A♯3 A♯3 B4 B4 B4 A4 G4 F♯4 C♯4 E4";
+                    break;
+                case 'kudiao':
+                    if (!this.textChanged) {
+                      this.textLyrics="整日困在狗舍里";
+                    }
+                    this.textDuration="0.587 0.689 0.618 0.241 0.269 0.29 0.62 0.884 0.959 0.803 0.468 0.565 0.5 0.897 0.80 1.015";
+                    this.textPitch="sp E4 G4 G4 E4 D♯4 C♯4 D4 D♯4 D♯4 A4 A4 A4 G4 G4 E4";
+                    break;
+                case 'xiaodiao':
+                    if (!this.textChanged) {
+                      this.textLyrics="洞房之中烛摇花影";
+                    }
+                    this.textDuration="0.25 0.657 0.398 0.867 0.539 0.657 0.298 0.341 0.844 0.298 0.60 0.436 0.238 0.394 0.281 0.299 0.432 0.743 1.149";
+                    this.textPitch="sp E4 F4 G♯4 F4 A♯4 G4 A4 C5 C5 E4 E4 F♯4 A4 G4 A4 C5 C5 G♯4";
+                    break;
+            }
+            this.disenableAudio();
+          },
+
+        validateInput() {
+            var textList = this.textLyrics.split('').filter(item => item && item.trim());
+            var pitchList = this.textPitch.split(' ').filter(item => item && item.trim());
+            if (pitchList.length >= textList.length + 1){
+              document.getElementById("chechInfo").innerHTML = "开始合成...";
+              return true;
+              }
+            else {
+              document.getElementById("chechInfo").innerHTML = `唱词长度过长：${textList.length}, 请重新输入！`;
+              return false;
+            }
+          },
+
+        sendText() {
+          const requestData = {
+            text: this.textLyrics,
+            notes: this.textPitch,
+            notes_duration: this.textDuration,
+            spk_name: this.nameSinger,
+          };
+          var valid = this.validateInput();
+          console.log(`chech ${valid}`)
+          if (valid) {
+          axios.post('https://nmt.xmu.edu.cn/ssyn/amateur', requestData)
+            .then(response => {
+              // 处理后端返回的响应数据
+              if (response.data.status) {
+                const audioUrl = response.data.audioUrl;
+                this.audioUrl = audioUrl;
+                document.getElementById("chechInfo").innerHTML = "合成好了！";
+                this.$refs.audioPlayer.play();
+              }
+              else {
+                document.getElementById("chechInfo").innerHTML = "无法合成，请仔细检查输入！";
+              }
+            })
+            .catch(error => {
+              console.error(error);
+            });
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

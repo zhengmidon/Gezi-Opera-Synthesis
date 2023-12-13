@@ -1,0 +1,64 @@
+base_config:
+  - ./popcs_ds_beta6_offline.yaml
+
+fs2_ckpt: 'checkpoints/diffopera_fs2/model_ckpt_steps_100000.ckpt' # empty if train fs2
+
+sampling_method: 'pc'  # 'pc' or 'ode'
+sampling_noise_removal: true # denoising in the end of sampling
+sampling_predictor: 'euler_maruyama' # 'reverse_diffusion' or 'ancestral_sampling' or 'euler_maruyama'
+sampling_corrector: 'none' # 'langevin' or 'ald'
+sampling_snr: 0.16 # signal-noise-ratio, used in corrector
+sampling_n_steps_each: 1 # The number of corrector steps per predictor update
+sampling_probability_flow: false # whether to use probability flow sampling
+
+training_continuous: false # Whether to use continuous time training
+
+sde: 'musde' # 'musde' or 'vpsde' or 'subvpsde' or 'vesde', sde for diffusion
+beta_min: 0.05
+beta_max: 20
+eps: 0.001
+num_steps: 100 # steps for sampling
+max_updates: 300000
+lr: 0.001
+max_sentences: 12
+max_tokens: 8000  # max number of mel frame
+
+task_cls: usr.diffopera_task.DiffOperaOfflineTask
+use_slur_embed: true # true if use slur info
+train_fs2: true # if false ,only train diffusion model
+diff_decoder_type: 'wavenet' # 'wavenet' or 'unet'
+reset_optimizer: false
+reset_lr_scheduler: false
+reset_training_step: false
+
+endless_ds: false # true to use recurrent data sampler
+num_valid_plots: 1 # num of plot in log about valid data
+save_best: false # true to save best model respecting validition loss
+num_ckpt_keep: 5
+val_check_interval: 20000
+save_gt: true # save gt data when test
+
+# data process
+max_frames: 8000
+binarizer_cls: data_gen.singing.binarize.GeZiBinarizer
+raw_data_dir: 'data/raw/GeZiXi'
+processed_data_dir: 'data/processed/GeZiXi'
+binary_data_dir: 'data/binary/GeZiXi'
+num_spk: 5
+datasets: [
+  'GeZiXi',
+]
+test_prefixes: [
+  '千古长恨-此去云南路千里-赵美玉-闺门旦', # 七字调
+  '三请樊梨花-双脚跪落啊妻灵前-薛丁山-小生', # 大哭
+  '杨门女将-你本是杨家传宗将-穆桂英-刀马旦', # 小哭
+  '沈园情-从今你我影随身-唐婉-闺门旦', # 梅花调
+  '平贵别窑-二次战鼓-薛平贵-武生' # 杂碎调
+]
+binarization_args:
+  with_wav: true
+  with_spk_embed: true
+  with_align: true
+  shuffle: true
+  with_slur: true
+  with_txt: true

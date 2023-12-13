@@ -1,0 +1,50 @@
+base_config:
+  - configs/singing/fs2.yaml
+
+audio_sample_rate: 24000
+hop_size: 128            # Hop size.
+fft_size: 512           # FFT size.
+win_size: 512           # FFT size.
+fmin: 30
+fmax: 12000
+min_level_db: -120
+
+binarization_args:
+  with_wav: true
+  with_spk_embed: false
+  with_align: true
+raw_data_dir: 'data/raw/opencpop'
+processed_data_dir: 'data/processed/opencpop'
+binary_data_dir: 'data/binary/opencpop'
+num_spk: 1
+datasets: [
+  'opencpop',
+]
+test_prefixes: [
+  '2001',
+  '2007',
+]
+
+task_cls: tasks.tts.fs2.FastSpeech2Task
+#vocoder: usr.singingvocoder.highgan.HighGAN
+#vocoder_ckpt: checkpoints/h_2_model/checkpoint-530000steps.pkl
+vocoder: vocoders.hifigan.HifiGAN
+vocoder_ckpt: checkpoints/0109_hifigan_bigpopcs_hop128
+use_nsf: true
+use_slur_embed: true # true if use slur info
+
+# config for experiments
+max_tokens: 8000
+use_spk_embed: false
+num_valid_plots: 10
+max_updates: 160000
+
+endless_ds: false # true to use recurrent data sampler
+num_valid_plots: 1 # num of plot in log about valid data
+save_best: false # true to save best model respecting validition loss
+num_ckpt_keep: 5
+val_check_interval: 20000
+save_gt: true # save gt data when test
+# tmp:
+#pe_enable: true
+#pe_ckpt: ''

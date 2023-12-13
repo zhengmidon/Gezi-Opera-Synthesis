@@ -1,0 +1,165 @@
+base_config:
+  - ./popcs_ds_beta6_offline.yaml
+
+# fs2_ckpt: 'checkpoints/gezixi_fs2midi_gen_pitch/model_ckpt_steps_80000.ckpt' # empty if train fs2
+fs2_ckpt: ''
+# speccls_path: 'checkpoints/spec_cls_conv1d/model_ckpt_steps_3000.ckpt'
+speccls_path: 'checkpoints/spec_cls_conv2d/model_ckpt_steps_3000.ckpt'
+
+# diffsinger params
+timesteps: 100
+K_step: 100
+gaussian_start: true
+diff_loss_type: l1
+diff_decoder_type: 'diffnet' # 'wavenet' or 'unet' or 'diffnet' or 'cross_attn_trans' or 'adaln_sa_trans' or 'adadiffnet'
+diff_decoder_layers: 2
+diff_decoder_conv_kernel_size: 31
+residual_layers: 20 # diffnet param
+residual_channels: 256 # diffnet param
+
+# model arch
+decoder_type: 'conformer' # conformer, fft, unet, wavenet
+dec_conv_kernel_size: 31
+unet_channel_0: 64
+unet_dim_mults: (1, 2, 4)
+hidden_size: 256
+enc_layers: 4
+dec_layers: 4
+sub_disc_layers: 3
+ml_disc_layers: 3
+n_discs: 3
+disc_weights: [0.5, 0.3, 0.2]
+disc_loss: 'hinge' # vanilla or hinge or lsgan
+disc_conditional: true
+num_heads: 8
+predictor_layers: 4
+pitch_num: 80 # midi number
+
+# task
+# task_cls: usr.gezixi_task.FastSpeech2PerceptualTask # for training our model
+# task_cls: usr.gezixi_task.FastSpeech2TestTask # for training fastspeech2
+task_cls: usr.diffsinger_task.DiffSingerMIDITask # for trainging diffsinger
+# task_cls: usr.edm_task.EDMTask
+
+# data augment
+use_data_aug: false # set it to false in test period, because we realize it in collater()
+re_prob: 0.5
+re_rate: 0.2
+
+# training
+max_updates: 250000
+lambda_gp: 1. # weight of gradient penalty
+lambda_ph_dur: 0. # phoneme duration loss factor
+lambda_word_dur: 0. # word duration loss factor
+lambda_sent_dur: 0. # sentence duration loss factor
+lambda_energy: 1. # energy loss factor
+lambda_f0: 0.1
+lambda_uv: 0.1
+lambda_perceptual: 0.1
+lambda_disc: 1. # factor for discriminator loss when train generator
+disc_factor: 1. # lambda for discriminator loss when train discriminator
+fm_factor: 0.1 # feature mapping weight
+pitch_cls_weight: 0.1 # pitch classification weight
+phone_cls_weight: 0.1 # phoneme classification weight
+spk_cls_weight: 0.01 # speaker classification weight
+disent_weight: 0.01 # disentangle classification weight
+discriminator_iter_start: 0001 # after these steps to start discriminator training
+feature_matching_iter_start: 0001
+
+
+lr: 0.0002
+accumulate_grad_batches: 1
+pitch_loss: l1
+mel_loss: "ssim:0.5|l1:0.5"
+# mel_loss: "ssim:0.2|mse:0.8"
+warmup_updates: 5000
+weight_decay: 0
+decay_steps: 10000
+step_lr_gamma: 0.93
+# max_sentences: 12
+max_tokens: 9600  # max number of mel frame in a mini-batch
+ds_workers: 8
+
+use_slur_embed: true # true if use slur info
+use_energy_embed: true
+use_gt_dur: true
+use_gt_f0: false # vocoder needs gt f0
+use_pitch_embed: false # whether to predict pitch
+use_pos_embed: true
+use_spk_embed: false # use resemblyzer to encode speaker contribute
+use_spk_id: true # use speaker id
+use_uv: true # always true
+use_midi: true
+use_pe_assist: false
+predict_pitch: false
+
+train_fs2: true # if false ,only train diffusion model
+reset_optimizer: false
+reset_lr_scheduler: false
+reset_training_step: false
+pe_enable: true # false if use gt f0 or predicted f0, true if not use_pitch_embed or not use_gt_f0
+pe_ckpt: 'checkpoints/0102_xiaoma_pe'
+pe_hidden_size: 256 # fixed
+test_set_name: 'test'
+
+endless_ds: false # true to use recurrent data sampler
+num_valid_plots: 1 # num of plot in log about valid data
+save_best: false # true to save best model respecting validition loss
+num_ckpt_keep: 4
+val_check_interval: 5000
+save_gt: true # save gt data when test
+
+#data process
+
+audio_num_mel_bins: 80
+audio_sample_rate: 24000
+fft_size: 512
+win_size: 512
+hop_size: 128
+fmax: 12000
+fmin: 10
+
+# audio_num_mel_bins: 80
+# audio_sample_rate: 44100
+# fft_size: 1024
+# win_size: 1024
+# hop_size: 256
+# fmax: 22050
+# fmin: 30
+
+max_frames: 6000 # max frames of a single wav piece item
+slice_len: 256
+binarizer_cls: data_gen.singing.binarize.GeZiBinarizer
+raw_data_dir: 'data/raw/GeZiXi'
+processed_data_dir: 'data/processed/GOAT'
+# binary_data_dir: 'data/binary/hokkien_speech'
+binary_data_dir: 'data/binary/GOAT'
+num_spk: 5
+datasets: [
+  'GOAT',
+]
+test_prefixes: [
+  '千古长恨-此去云南路千里-赵美玉-闺门旦', # 七字调
+  '三请樊梨花-双脚跪落啊妻灵前-薛丁山-小生', # 大哭
+  '杨门女将-你本是杨家传宗将-穆桂英-刀马旦', # 小哭
+  '沈园情-从今你我影随身-唐婉-闺门旦', # 梅花调
+  '平贵别窑-二次战鼓-薛平贵-武生' # 杂碎调
+]
+# test_prefixes: [
+#   'SuiSiann_0001',
+#   'SuiSiann_0003',
+#   'SuiSiann_0005',
+#   'SuiSiann_0007',
+#   'SuiSiann_0011'
+# ]
+# test_prefixes: [
+#   'lseh-Wo_ben_shi-Qiong_lin_yan-qm',
+# ]
+reset_phone_dict: true
+binarization_args:
+  with_wav: true
+  with_spk_embed: true
+  with_align: true
+  shuffle: true
+  with_slur: true
+  with_txt: true
