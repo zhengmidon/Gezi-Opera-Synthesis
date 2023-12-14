@@ -1,0 +1,1 @@
+Fill this [apply form](https://github.com/zhengmidon/Gezi-Opera-Synthesis/blob/master/data/ApplyForm.txt) and send it to midon@stu.xmu.edu.cn to get the dataset download link.

@@ -11,7 +11,7 @@ cd Gezi_opera_synthesis
 pip install -r requirements.txt
 ```
 2. Download the pretrained [vocoder](https://github.com/MoonInTheRiver/DiffSinger/releases/download/pretrain-model/model_ckpt_steps_1512000.ckpt) and the [pitch extractor](https://github.com/MoonInTheRiver/DiffSinger/releases/download/pretrain-model/0102_xiaoma_pe.zip), unzip these two files into `checkpoints` before training your acoustic model.
-1. Download the [dataset](https://github.com/double-blind-pseudo-user/Gezi_opera_synthesis/releases/download/assets/GOAT.zip) and unzip it into `data/processed`.
+3. Download the [dataset](https://github.com/zhengmidon/Gezi-Opera-Synthesis/tree/master/data) and unzip it into `data/processed`.
 
 ## :page_facing_up: Preprocessing
 Run the following scripts to binarize the data:
